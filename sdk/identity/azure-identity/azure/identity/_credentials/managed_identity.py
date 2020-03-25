@@ -70,7 +70,7 @@ class _ManagedIdentityBase(object):
 
     def __init__(self, endpoint, client_cls, config=None, client_id=None, **kwargs):
         # type: (str, Type, Optional[Configuration], Optional[str], Any) -> None
-        self._client_id = client_id
+        self._client_id = client_id or os.environ.get(EnvironmentVariables.AZURE_CLIENT_ID)
         config = config or self._create_config(**kwargs)
         policies = [
             ContentDecodePolicy(),
