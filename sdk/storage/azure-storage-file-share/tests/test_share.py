@@ -1320,7 +1320,7 @@ class TestStorageShare(StorageRecordedTestCase):
         share.create_share()
 
         # Act
-        identifiers = dict()
+        identifiers = {}
         expiry_time = self.get_datetime_variable(variables, 'expiry_time', datetime.utcnow() + timedelta(hours=1))
         start_time = self.get_datetime_variable(variables, 'start_time', datetime.utcnow() - timedelta(minutes=1))
         identifiers['testid'] = AccessPolicy(
@@ -1351,7 +1351,7 @@ class TestStorageShare(StorageRecordedTestCase):
         share.create_share()
 
         # Act
-        identifiers = dict()
+        identifiers = {}
         for i in range(0, 6):
             identifiers['id{}'.format(i)] = AccessPolicy()
 
@@ -1651,47 +1651,54 @@ class TestStorageShare(StorageRecordedTestCase):
         premium_storage_file_account_name = kwargs.pop("premium_storage_file_account_name")
         premium_storage_file_account_key = kwargs.pop("premium_storage_file_account_key")
 
-        # Arrange
-        self._setup(premium_storage_file_account_name, premium_storage_file_account_key)
-        mibps = 10340
-        iops = 102400
+        try:
+            # Arrange
+            self._setup(premium_storage_file_account_name, premium_storage_file_account_key)
+            mibps = 10340
+            iops = 102400
 
-        # Act / Assert
-        share = self._create_share(
-            paid_bursting_enabled=True,
-            paid_bursting_bandwidth_mibps=5000,
-            paid_bursting_iops=1000
-        )
-        share_props = share.get_share_properties()
-        assert share_props.paid_bursting_enabled
-        assert share_props.paid_bursting_bandwidth_mibps == 5000
-        assert share_props.paid_bursting_iops == 1000
+            # Act / Assert
+            share = self._get_share_reference()
+            share.create_share(
+                paid_bursting_enabled=True,
+                paid_bursting_bandwidth_mibps=5000,
+                paid_bursting_iops=1000
+            )
+            share_props = share.get_share_properties()
+            assert share_props.paid_bursting_enabled
+            assert share_props.paid_bursting_bandwidth_mibps == 5000
+            assert share_props.paid_bursting_iops == 1000
 
-        share.set_share_properties(
-            root_squash="NoRootSquash",
-            paid_bursting_enabled=True,
-            paid_bursting_bandwidth_mibps=mibps,
-            paid_bursting_iops=iops
-        )
-        share_props = share.get_share_properties()
-        share_name = share_props.name
-        assert share_props.paid_bursting_enabled
-        assert share_props.paid_bursting_bandwidth_mibps == mibps
-        assert share_props.paid_bursting_iops == iops
+            share.set_share_properties(
+                root_squash="NoRootSquash",
+                paid_bursting_enabled=True,
+                paid_bursting_bandwidth_mibps=mibps,
+                paid_bursting_iops=iops
+            )
+            share_props = share.get_share_properties()
+            share_name = share_props.name
+            assert share_props.paid_bursting_enabled
+            assert share_props.paid_bursting_bandwidth_mibps == mibps
+            assert share_props.paid_bursting_iops == iops
 
-        shares = list(self.fsc.list_shares())
-        assert shares is not None
-        assert len(shares) >= 1
-        for share in shares:
-            if share.name == share_name:
-                assert share is not None
-                assert share.paid_bursting_enabled
-                assert share.paid_bursting_bandwidth_mibps == mibps
-                assert share.paid_bursting_iops == iops
-                break
-            raise ValueError("Share with modified bursting values not found.")
+            shares = list(self.fsc.list_shares())
+            assert shares is not None
+            assert len(shares) >= 1
 
-        self._delete_shares()
+            share_exists = False
+            for share in shares:
+                if share.name == share_name:
+                    assert share is not None
+                    assert share.paid_bursting_enabled
+                    assert share.paid_bursting_bandwidth_mibps == mibps
+                    assert share.paid_bursting_iops == iops
+                    share_exists = True
+                    break
+
+            if not share_exists:
+                raise ValueError("Share with modified bursting values not found.")
+        finally:
+            self._delete_shares()
 
     @FileSharePreparer()
     @recorded_by_proxy
@@ -1778,6 +1785,82 @@ class TestStorageShare(StorageRecordedTestCase):
         lease.release()
         share_client.delete_share()
 
+    @FileSharePreparer()
+    @recorded_by_proxy
+    def test_create_share_access_tier_premium(self, **kwargs):
+        premium_storage_file_account_name = kwargs.pop("premium_storage_file_account_name")
+        premium_storage_file_account_key = kwargs.pop("premium_storage_file_account_key")
+
+        try:
+            self._setup(premium_storage_file_account_name, premium_storage_file_account_key)
+
+            share = self._get_share_reference()
+            share.create_share(access_tier='Premium')
+            props = share.get_share_properties()
+            assert props.access_tier == 'Premium'
+        finally:
+            self._delete_shares()
+
+    @FileSharePreparer()
+    @recorded_by_proxy
+    def test_set_share_properties_access_tier_premium(self, **kwargs):
+        premium_storage_file_account_name = kwargs.pop("premium_storage_file_account_name")
+        premium_storage_file_account_key = kwargs.pop("premium_storage_file_account_key")
+
+        try:
+            self._setup(premium_storage_file_account_name, premium_storage_file_account_key)
+
+            share = self._get_share_reference()
+            share.create_share()
+            share.set_share_properties(access_tier='Premium')
+            props = share.get_share_properties()
+            assert props.access_tier == 'Premium'
+        finally:
+            self._delete_shares()
+
+    @pytest.mark.playback_test_only
+    @FileSharePreparer()
+    @recorded_by_proxy
+    def test_provisioned_billing_v2(self, **kwargs):
+        storage_account_name = kwargs.pop("storage_account_name")
+        storage_account_key = kwargs.pop("storage_account_key")
+
+        try:
+            self._setup(storage_account_name, storage_account_key)
+
+            share_name = self.get_resource_name(TEST_SHARE_PREFIX)
+            share = self.fsc.get_share_client(share_name)
+            self.test_shares.append(share_name)
+
+            share.create_share(provisioned_iops=500, provisioned_bandwidth_mibps=150)
+            props = share.get_share_properties()
+            assert props is not None
+            assert props.provisioned_iops == 500
+            assert props.provisioned_bandwidth == 150
+            assert props.included_burst_iops is not None
+            assert props.max_burst_credits_for_iops is not None
+            assert props.next_provisioned_iops_downgrade is not None
+            assert props.next_provisioned_bandwidth_downgrade is not None
+
+            share.set_share_properties(
+                access_tier="Hot",
+                provisioned_iops=3000,
+                provisioned_bandwidth_mibps=125
+            )
+
+            shares = list(self.fsc.list_shares())
+
+            assert shares is not None
+            assert len(shares) >= 1
+            assert shares[0].name == share_name
+            assert shares[0].provisioned_iops == 3000
+            assert shares[0].provisioned_bandwidth == 125
+            assert shares[0].included_burst_iops is not None
+            assert shares[0].max_burst_credits_for_iops is not None
+            assert shares[0].next_provisioned_iops_downgrade is not None
+            assert shares[0].next_provisioned_bandwidth_downgrade is not None
+        finally:
+            self._delete_shares()
 
 # ------------------------------------------------------------------------------
 if __name__ == '__main__':

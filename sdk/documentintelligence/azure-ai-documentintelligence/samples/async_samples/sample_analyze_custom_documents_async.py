@@ -49,8 +49,8 @@ def print_table(header_names, table_data):
 
 async def analyze_custom_documents(custom_model_id):
     # For the Form_1.jpg, it should be the test file under the traning dataset which storage at the Azure Blob Storage path
-    # combined by DOCUMENTINTELLIGENCE_STORAGE_ADVANCED_CONTAINER_SAS_URL and DOCUMENTINTELLIGENCE_STORAGE_PREFIX, 
-    # or it can also be a test file with the format similar to the training dataset. 
+    # combined by DOCUMENTINTELLIGENCE_STORAGE_ADVANCED_CONTAINER_SAS_URL and DOCUMENTINTELLIGENCE_STORAGE_PREFIX,
+    # or it can also be a test file with the format similar to the training dataset.
     # Put it here locally just for presenting documents visually in sample.
 
     # Before analyzing a custom document, should upload the related training dataset into Azure Storage Blob and
@@ -70,9 +70,7 @@ async def analyze_custom_documents(custom_model_id):
 
     # Make sure your document's type is included in the list of document types the custom model can analyze
     with open(path_to_sample_documents, "rb") as f:
-        poller = await document_intelligence_client.begin_analyze_document(
-            model_id=model_id, analyze_request=f, content_type="application/octet-stream"
-        )
+        poller = await document_intelligence_client.begin_analyze_document(model_id=model_id, body=f)
     result: AnalyzeResult = await poller.result()
 
     if result.documents:

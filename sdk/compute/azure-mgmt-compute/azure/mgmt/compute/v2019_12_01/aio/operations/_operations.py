@@ -1,4 +1,4 @@
-# pylint: disable=too-many-lines,too-many-statements
+# pylint: disable=too-many-lines
 # coding=utf-8
 # --------------------------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
@@ -18,7 +18,6 @@ from typing import (
     List,
     Literal,
     Optional,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -33,6 +32,8 @@ from azure.core.exceptions import (
     ResourceExistsError,
     ResourceNotFoundError,
     ResourceNotModifiedError,
+    StreamClosedError,
+    StreamConsumedError,
     map_error,
 )
 from azure.core.pipeline import PipelineResponse
@@ -207,7 +208,7 @@ from ...operations._operations import (
 if sys.version_info >= (3, 9):
     from collections.abc import MutableMapping
 else:
-    from typing import MutableMapping  # type: ignore  # pylint: disable=ungrouped-imports
+    from typing import MutableMapping  # type: ignore
 T = TypeVar("T")
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
 
@@ -248,7 +249,7 @@ class Operations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.ComputeOperationListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -401,7 +402,7 @@ class AvailabilitySetsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.AvailabilitySet
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -528,7 +529,7 @@ class AvailabilitySetsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.AvailabilitySet
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -583,9 +584,7 @@ class AvailabilitySetsOperations:
         return deserialized  # type: ignore
 
     @distributed_trace_async
-    async def delete(  # pylint: disable=inconsistent-return-statements
-        self, resource_group_name: str, availability_set_name: str, **kwargs: Any
-    ) -> None:
+    async def delete(self, resource_group_name: str, availability_set_name: str, **kwargs: Any) -> None:
         """Delete an availability set.
 
         :param resource_group_name: The name of the resource group. Required.
@@ -596,7 +595,7 @@ class AvailabilitySetsOperations:
         :rtype: None
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -646,7 +645,7 @@ class AvailabilitySetsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.AvailabilitySet
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -708,7 +707,7 @@ class AvailabilitySetsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.AvailabilitySetListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -786,7 +785,7 @@ class AvailabilitySetsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.AvailabilitySetListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -869,7 +868,7 @@ class AvailabilitySetsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineSizeListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1027,7 +1026,7 @@ class ProximityPlacementGroupsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.ProximityPlacementGroup
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1074,11 +1073,7 @@ class ProximityPlacementGroupsOperations:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = self._deserialize("ProximityPlacementGroup", pipeline_response.http_response)
-
-        if response.status_code == 201:
-            deserialized = self._deserialize("ProximityPlacementGroup", pipeline_response.http_response)
+        deserialized = self._deserialize("ProximityPlacementGroup", pipeline_response.http_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -1161,7 +1156,7 @@ class ProximityPlacementGroupsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.ProximityPlacementGroup
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1216,9 +1211,7 @@ class ProximityPlacementGroupsOperations:
         return deserialized  # type: ignore
 
     @distributed_trace_async
-    async def delete(  # pylint: disable=inconsistent-return-statements
-        self, resource_group_name: str, proximity_placement_group_name: str, **kwargs: Any
-    ) -> None:
+    async def delete(self, resource_group_name: str, proximity_placement_group_name: str, **kwargs: Any) -> None:
         """Delete a proximity placement group.
 
         :param resource_group_name: The name of the resource group. Required.
@@ -1229,7 +1222,7 @@ class ProximityPlacementGroupsOperations:
         :rtype: None
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1289,7 +1282,7 @@ class ProximityPlacementGroupsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.ProximityPlacementGroup
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1348,7 +1341,7 @@ class ProximityPlacementGroupsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.ProximityPlacementGroupListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1428,7 +1421,7 @@ class ProximityPlacementGroupsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.ProximityPlacementGroupListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1589,7 +1582,7 @@ class DedicatedHostGroupsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.DedicatedHostGroup
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1636,11 +1629,7 @@ class DedicatedHostGroupsOperations:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = self._deserialize("DedicatedHostGroup", pipeline_response.http_response)
-
-        if response.status_code == 201:
-            deserialized = self._deserialize("DedicatedHostGroup", pipeline_response.http_response)
+        deserialized = self._deserialize("DedicatedHostGroup", pipeline_response.http_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -1720,7 +1709,7 @@ class DedicatedHostGroupsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.DedicatedHostGroup
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1775,9 +1764,7 @@ class DedicatedHostGroupsOperations:
         return deserialized  # type: ignore
 
     @distributed_trace_async
-    async def delete(  # pylint: disable=inconsistent-return-statements
-        self, resource_group_name: str, host_group_name: str, **kwargs: Any
-    ) -> None:
+    async def delete(self, resource_group_name: str, host_group_name: str, **kwargs: Any) -> None:
         """Delete a dedicated host group.
 
         :param resource_group_name: The name of the resource group. Required.
@@ -1788,7 +1775,7 @@ class DedicatedHostGroupsOperations:
         :rtype: None
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1838,7 +1825,7 @@ class DedicatedHostGroupsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.DedicatedHostGroup
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1900,7 +1887,7 @@ class DedicatedHostGroupsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.DedicatedHostGroupListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -1977,7 +1964,7 @@ class DedicatedHostGroupsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.DedicatedHostGroupListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -2066,7 +2053,7 @@ class DedicatedHostsOperations:
         parameters: Union[_models.DedicatedHost, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -2103,6 +2090,7 @@ class DedicatedHostsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -2111,15 +2099,14 @@ class DedicatedHostsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -2270,7 +2257,7 @@ class DedicatedHostsOperations:
         parameters: Union[_models.DedicatedHostUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -2307,6 +2294,7 @@ class DedicatedHostsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -2315,11 +2303,14 @@ class DedicatedHostsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -2465,7 +2456,7 @@ class DedicatedHostsOperations:
     async def _delete_initial(
         self, resource_group_name: str, host_group_name: str, host_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -2490,6 +2481,7 @@ class DedicatedHostsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -2498,18 +2490,14 @@ class DedicatedHostsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -2598,7 +2586,7 @@ class DedicatedHostsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.DedicatedHost
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -2664,7 +2652,7 @@ class DedicatedHostsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.DedicatedHostListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -2764,7 +2752,7 @@ class SshPublicKeysOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.SshPublicKeysGroupListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -2845,7 +2833,7 @@ class SshPublicKeysOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.SshPublicKeysGroupListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -2979,7 +2967,7 @@ class SshPublicKeysOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.SshPublicKeyResource
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -3026,11 +3014,7 @@ class SshPublicKeysOperations:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = self._deserialize("SshPublicKeyResource", pipeline_response.http_response)
-
-        if response.status_code == 201:
-            deserialized = self._deserialize("SshPublicKeyResource", pipeline_response.http_response)
+        deserialized = self._deserialize("SshPublicKeyResource", pipeline_response.http_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -3111,7 +3095,7 @@ class SshPublicKeysOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.SshPublicKeyResource
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -3166,9 +3150,7 @@ class SshPublicKeysOperations:
         return deserialized  # type: ignore
 
     @distributed_trace_async
-    async def delete(  # pylint: disable=inconsistent-return-statements
-        self, resource_group_name: str, ssh_public_key_name: str, **kwargs: Any
-    ) -> None:
+    async def delete(self, resource_group_name: str, ssh_public_key_name: str, **kwargs: Any) -> None:
         """Delete an SSH public key.
 
         :param resource_group_name: The name of the resource group. Required.
@@ -3179,7 +3161,7 @@ class SshPublicKeysOperations:
         :rtype: None
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -3231,7 +3213,7 @@ class SshPublicKeysOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.SshPublicKeyResource
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -3289,7 +3271,7 @@ class SshPublicKeysOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.SshPublicKeyGenerateKeyPairResult
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -3370,7 +3352,7 @@ class VirtualMachineExtensionImagesOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineExtensionImage
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -3428,7 +3410,7 @@ class VirtualMachineExtensionImagesOperations:
         :rtype: list[~azure.mgmt.compute.v2019_12_01.models.VirtualMachineExtensionImage]
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -3500,7 +3482,7 @@ class VirtualMachineExtensionImagesOperations:
         :rtype: list[~azure.mgmt.compute.v2019_12_01.models.VirtualMachineExtensionImage]
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -3575,7 +3557,7 @@ class VirtualMachineExtensionsOperations:
         extension_parameters: Union[_models.VirtualMachineExtension, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -3612,6 +3594,7 @@ class VirtualMachineExtensionsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -3620,15 +3603,14 @@ class VirtualMachineExtensionsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -3785,7 +3767,7 @@ class VirtualMachineExtensionsOperations:
         extension_parameters: Union[_models.VirtualMachineExtensionUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -3822,6 +3804,7 @@ class VirtualMachineExtensionsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -3830,11 +3813,14 @@ class VirtualMachineExtensionsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -3987,7 +3973,7 @@ class VirtualMachineExtensionsOperations:
     async def _delete_initial(
         self, resource_group_name: str, vm_name: str, vm_extension_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4012,6 +3998,7 @@ class VirtualMachineExtensionsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -4020,18 +4007,14 @@ class VirtualMachineExtensionsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -4120,7 +4103,7 @@ class VirtualMachineExtensionsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineExtension
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4180,7 +4163,7 @@ class VirtualMachineExtensionsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineExtensionsListResult
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4264,7 +4247,7 @@ class VirtualMachineImagesOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineImage
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4343,7 +4326,7 @@ class VirtualMachineImagesOperations:
         :rtype: list[~azure.mgmt.compute.v2019_12_01.models.VirtualMachineImageResource]
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4404,7 +4387,7 @@ class VirtualMachineImagesOperations:
         :rtype: list[~azure.mgmt.compute.v2019_12_01.models.VirtualMachineImageResource]
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4456,7 +4439,7 @@ class VirtualMachineImagesOperations:
         :rtype: list[~azure.mgmt.compute.v2019_12_01.models.VirtualMachineImageResource]
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4513,7 +4496,7 @@ class VirtualMachineImagesOperations:
         :rtype: list[~azure.mgmt.compute.v2019_12_01.models.VirtualMachineImageResource]
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4594,7 +4577,7 @@ class UsageOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.ListUsagesResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4694,7 +4677,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4762,7 +4745,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         parameters: Union[_models.VirtualMachineCaptureParameters, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4798,6 +4781,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -4806,15 +4790,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -4960,7 +4943,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         parameters: Union[_models.VirtualMachine, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -4996,6 +4979,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -5004,15 +4988,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -5155,7 +5138,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         parameters: Union[_models.VirtualMachineUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -5191,6 +5174,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -5199,15 +5183,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -5341,7 +5324,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
 
     async def _delete_initial(self, resource_group_name: str, vm_name: str, **kwargs: Any) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -5365,6 +5348,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -5373,18 +5357,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -5460,7 +5440,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachine
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -5517,7 +5497,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineInstanceView
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -5562,7 +5542,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
     async def _convert_to_managed_disks_initial(
         self, resource_group_name: str, vm_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -5586,6 +5566,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -5594,15 +5575,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -5616,8 +5596,9 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         """Converts virtual machine disks from blob-based to managed disks. Virtual machine must be
         stop-deallocated before invoking this operation. :code:`<br>`For Windows, please refer to
         `Convert a virtual machine from unmanaged disks to managed disks.
-        <https://docs.microsoft.com/en-us/azure/virtual-machines/windows/convert-unmanaged-to-managed-disks>`_.:code:`<br>`For
-        Linux, please refer to `Convert a virtual machine from unmanaged disks to managed disks.
+        <https://docs.microsoft.com/en-us/azure/virtual-machines/windows/convert-unmanaged-to-managed-disks>`_.\\
+        :code:`<br>`For Linux, please refer to `Convert a virtual machine from unmanaged disks to
+        managed disks.
         <https://docs.microsoft.com/en-us/azure/virtual-machines/linux/convert-unmanaged-to-managed-disks>`_.
 
         :param resource_group_name: The name of the resource group. Required.
@@ -5669,7 +5650,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore
 
     async def _deallocate_initial(self, resource_group_name: str, vm_name: str, **kwargs: Any) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -5693,6 +5674,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -5701,15 +5683,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -5770,14 +5751,12 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore
 
     @distributed_trace_async
-    async def generalize(  # pylint: disable=inconsistent-return-statements
-        self, resource_group_name: str, vm_name: str, **kwargs: Any
-    ) -> None:
+    async def generalize(self, resource_group_name: str, vm_name: str, **kwargs: Any) -> None:
         """Sets the OS state of the virtual machine to generalized. It is recommended to sysprep the
         virtual machine before performing this operation. :code:`<br>`For Windows, please refer to
         `Create a managed image of a generalized VM in Azure
-        <https://docs.microsoft.com/en-us/azure/virtual-machines/windows/capture-image-resource>`_.:code:`<br>`For
-        Linux, please refer to `How to create an image of a virtual machine or VHD
+        <https://docs.microsoft.com/en-us/azure/virtual-machines/windows/capture-image-resource>`_.\\
+        :code:`<br>`For Linux, please refer to `How to create an image of a virtual machine or VHD
         <https://docs.microsoft.com/en-us/azure/virtual-machines/linux/capture-image>`_.
 
         :param resource_group_name: The name of the resource group. Required.
@@ -5788,7 +5767,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         :rtype: None
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -5844,7 +5823,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -5924,7 +5903,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6007,7 +5986,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineSizeListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6072,7 +6051,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
     async def _power_off_initial(
         self, resource_group_name: str, vm_name: str, *, skip_shutdown: bool = False, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6097,6 +6076,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -6105,15 +6085,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -6181,7 +6160,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore
 
     async def _reapply_initial(self, resource_group_name: str, vm_name: str, **kwargs: Any) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6205,6 +6184,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -6213,15 +6193,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -6281,7 +6260,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore
 
     async def _restart_initial(self, resource_group_name: str, vm_name: str, **kwargs: Any) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6305,6 +6284,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -6313,15 +6293,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -6381,7 +6360,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore
 
     async def _start_initial(self, resource_group_name: str, vm_name: str, **kwargs: Any) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6405,6 +6384,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -6413,15 +6393,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -6481,7 +6460,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore
 
     async def _redeploy_initial(self, resource_group_name: str, vm_name: str, **kwargs: Any) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6505,6 +6484,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -6513,15 +6493,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -6587,7 +6566,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         parameters: Optional[Union[_models.VirtualMachineReimageParameters, IO[bytes]]] = None,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6626,6 +6605,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -6634,15 +6614,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -6771,7 +6750,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
     async def _perform_maintenance_initial(
         self, resource_group_name: str, vm_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6795,6 +6774,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -6803,15 +6783,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -6874,9 +6853,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore
 
     @distributed_trace_async
-    async def simulate_eviction(  # pylint: disable=inconsistent-return-statements
-        self, resource_group_name: str, vm_name: str, **kwargs: Any
-    ) -> None:
+    async def simulate_eviction(self, resource_group_name: str, vm_name: str, **kwargs: Any) -> None:
         """The operation to simulate the eviction of spot virtual machine. The eviction will occur within
         30 minutes of calling the API.
 
@@ -6888,7 +6865,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         :rtype: None
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6933,7 +6910,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         parameters: Union[_models.RunCommandInput, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -6969,6 +6946,7 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -6977,15 +6955,14 @@ class VirtualMachinesOperations:  # pylint: disable=too-many-public-methods
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -7159,7 +7136,7 @@ class VirtualMachineSizesOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineSizeListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -7244,7 +7221,7 @@ class ImagesOperations:
     async def _create_or_update_initial(
         self, resource_group_name: str, image_name: str, parameters: Union[_models.Image, IO[bytes]], **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -7280,6 +7257,7 @@ class ImagesOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -7288,15 +7266,14 @@ class ImagesOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -7426,7 +7403,7 @@ class ImagesOperations:
         parameters: Union[_models.ImageUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -7462,6 +7439,7 @@ class ImagesOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -7470,15 +7448,14 @@ class ImagesOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -7606,7 +7583,7 @@ class ImagesOperations:
         )
 
     async def _delete_initial(self, resource_group_name: str, image_name: str, **kwargs: Any) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -7630,6 +7607,7 @@ class ImagesOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -7638,18 +7616,14 @@ class ImagesOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -7724,7 +7698,7 @@ class ImagesOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.Image
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -7783,7 +7757,7 @@ class ImagesOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.ImageListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -7859,7 +7833,7 @@ class ImagesOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.ImageListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -7947,7 +7921,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         parameters: Union[_models.VirtualMachineScaleSet, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -7983,6 +7957,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -7991,15 +7966,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -8139,7 +8113,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         parameters: Union[_models.VirtualMachineScaleSetUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -8175,6 +8149,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -8183,11 +8158,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -8324,7 +8302,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
     async def _delete_initial(
         self, resource_group_name: str, vm_scale_set_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -8348,6 +8326,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -8356,18 +8335,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -8442,7 +8417,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineScaleSet
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -8491,7 +8466,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         vm_instance_i_ds: Optional[Union[_models.VirtualMachineScaleSetVMInstanceIDs, IO[bytes]]] = None,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -8530,6 +8505,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -8538,15 +8514,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -8686,7 +8661,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         vm_instance_i_ds: Union[_models.VirtualMachineScaleSetVMInstanceRequiredIDs, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -8722,6 +8697,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -8730,15 +8706,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -8879,7 +8854,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineScaleSetInstanceView
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -8939,7 +8914,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineScaleSetListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -9018,7 +8993,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineScaleSetListWithLinkResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -9101,7 +9076,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineScaleSetListSkusResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -9167,6 +9142,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
     def get_os_upgrade_history(
         self, resource_group_name: str, vm_scale_set_name: str, **kwargs: Any
     ) -> AsyncIterable["_models.UpgradeOperationHistoricalStatusInfo"]:
+        # pylint: disable=line-too-long
         """Gets list of OS upgrades on a VM scale set instance.
 
         :param resource_group_name: The name of the resource group. Required.
@@ -9185,7 +9161,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineScaleSetListOSUpgradeHistory] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -9256,7 +9232,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         skip_shutdown: bool = False,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -9296,6 +9272,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -9304,15 +9281,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -9469,7 +9445,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         vm_instance_i_ds: Optional[Union[_models.VirtualMachineScaleSetVMInstanceIDs, IO[bytes]]] = None,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -9508,6 +9484,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -9516,15 +9493,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -9658,7 +9634,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         vm_instance_i_ds: Optional[Union[_models.VirtualMachineScaleSetVMInstanceIDs, IO[bytes]]] = None,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -9697,6 +9673,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -9705,15 +9682,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -9847,7 +9823,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         vm_instance_i_ds: Optional[Union[_models.VirtualMachineScaleSetVMInstanceIDs, IO[bytes]]] = None,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -9886,6 +9862,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -9894,15 +9871,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -10039,7 +10015,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         vm_instance_i_ds: Optional[Union[_models.VirtualMachineScaleSetVMInstanceIDs, IO[bytes]]] = None,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -10078,6 +10054,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -10086,15 +10063,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -10237,7 +10213,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         vm_instance_i_ds: Union[_models.VirtualMachineScaleSetVMInstanceRequiredIDs, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -10273,6 +10249,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -10281,15 +10258,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -10423,7 +10399,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         vm_scale_set_reimage_input: Optional[Union[_models.VirtualMachineScaleSetReimageParameters, IO[bytes]]] = None,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -10462,6 +10438,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -10470,15 +10447,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -10616,7 +10592,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         vm_instance_i_ds: Optional[Union[_models.VirtualMachineScaleSetVMInstanceIDs, IO[bytes]]] = None,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -10655,6 +10631,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -10663,15 +10640,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -10819,7 +10795,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.RecoveryWalkResponse
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -10863,7 +10839,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         return deserialized  # type: ignore
 
     @overload
-    async def convert_to_single_placement_group(  # pylint: disable=inconsistent-return-statements
+    async def convert_to_single_placement_group(
         self,
         resource_group_name: str,
         vm_scale_set_name: str,
@@ -10891,7 +10867,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         """
 
     @overload
-    async def convert_to_single_placement_group(  # pylint: disable=inconsistent-return-statements
+    async def convert_to_single_placement_group(
         self,
         resource_group_name: str,
         vm_scale_set_name: str,
@@ -10918,7 +10894,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         """
 
     @distributed_trace_async
-    async def convert_to_single_placement_group(  # pylint: disable=inconsistent-return-statements
+    async def convert_to_single_placement_group(
         self,
         resource_group_name: str,
         vm_scale_set_name: str,
@@ -10941,7 +10917,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         :rtype: None
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -10998,7 +10974,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         parameters: Union[_models.OrchestrationServiceStateInput, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -11034,6 +11010,7 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -11042,15 +11019,14 @@ class VirtualMachineScaleSetsOperations:  # pylint: disable=too-many-public-meth
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -11206,7 +11182,7 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
         extension_parameters: Union[_models.VirtualMachineScaleSetExtension, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -11243,6 +11219,7 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -11251,15 +11228,14 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -11417,7 +11393,7 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
         extension_parameters: Union[_models.VirtualMachineScaleSetExtensionUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -11454,6 +11430,7 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -11462,15 +11439,14 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -11624,7 +11600,7 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
     async def _delete_initial(
         self, resource_group_name: str, vm_scale_set_name: str, vmss_extension_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -11649,6 +11625,7 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -11657,18 +11634,14 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -11757,7 +11730,7 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineScaleSetExtension
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -11823,7 +11796,7 @@ class VirtualMachineScaleSetExtensionsOperations:  # pylint: disable=name-too-lo
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineScaleSetExtensionListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -11909,7 +11882,7 @@ class VirtualMachineScaleSetRollingUpgradesOperations:  # pylint: disable=name-t
     async def _cancel_initial(
         self, resource_group_name: str, vm_scale_set_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -11933,6 +11906,7 @@ class VirtualMachineScaleSetRollingUpgradesOperations:  # pylint: disable=name-t
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -11941,15 +11915,14 @@ class VirtualMachineScaleSetRollingUpgradesOperations:  # pylint: disable=name-t
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -12013,7 +11986,7 @@ class VirtualMachineScaleSetRollingUpgradesOperations:  # pylint: disable=name-t
     async def _start_os_upgrade_initial(
         self, resource_group_name: str, vm_scale_set_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -12037,6 +12010,7 @@ class VirtualMachineScaleSetRollingUpgradesOperations:  # pylint: disable=name-t
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -12045,15 +12019,14 @@ class VirtualMachineScaleSetRollingUpgradesOperations:  # pylint: disable=name-t
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -12119,7 +12092,7 @@ class VirtualMachineScaleSetRollingUpgradesOperations:  # pylint: disable=name-t
     async def _start_extension_upgrade_initial(
         self, resource_group_name: str, vm_scale_set_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -12143,6 +12116,7 @@ class VirtualMachineScaleSetRollingUpgradesOperations:  # pylint: disable=name-t
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -12151,15 +12125,14 @@ class VirtualMachineScaleSetRollingUpgradesOperations:  # pylint: disable=name-t
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -12236,7 +12209,7 @@ class VirtualMachineScaleSetRollingUpgradesOperations:  # pylint: disable=name-t
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.RollingUpgradeStatusInfo
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -12308,7 +12281,7 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
         extension_parameters: Union[_models.VirtualMachineExtension, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -12346,6 +12319,7 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -12354,15 +12328,14 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -12527,7 +12500,7 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
         extension_parameters: Union[_models.VirtualMachineExtensionUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -12565,6 +12538,7 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -12573,11 +12547,14 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -12737,7 +12714,7 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
     async def _delete_initial(
         self, resource_group_name: str, vm_scale_set_name: str, instance_id: str, vm_extension_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -12763,6 +12740,7 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -12771,18 +12749,14 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -12876,7 +12850,7 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineExtension
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -12945,7 +12919,7 @@ class VirtualMachineScaleSetVMExtensionsOperations:  # pylint: disable=name-too-
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineExtensionsListResult
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -13020,7 +12994,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         ] = None,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -13060,6 +13034,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -13068,15 +13043,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -13219,7 +13193,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
     async def _reimage_all_initial(
         self, resource_group_name: str, vm_scale_set_name: str, instance_id: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -13244,6 +13218,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -13252,15 +13227,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -13328,7 +13302,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
     async def _deallocate_initial(
         self, resource_group_name: str, vm_scale_set_name: str, instance_id: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -13353,6 +13327,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -13361,15 +13336,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -13443,7 +13417,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         parameters: Union[_models.VirtualMachineScaleSetVM, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -13480,6 +13454,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -13488,15 +13463,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -13647,7 +13621,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
     async def _delete_initial(
         self, resource_group_name: str, vm_scale_set_name: str, instance_id: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -13672,6 +13646,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -13680,18 +13655,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -13780,7 +13751,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineScaleSetVM
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -13840,7 +13811,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.VirtualMachineScaleSetVMInstanceView
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -13922,7 +13893,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.VirtualMachineScaleSetVMListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -13996,7 +13967,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         skip_shutdown: bool = False,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -14022,6 +13993,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -14030,15 +14002,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -14118,7 +14089,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
     async def _restart_initial(
         self, resource_group_name: str, vm_scale_set_name: str, instance_id: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -14143,6 +14114,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -14151,15 +14123,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -14226,7 +14197,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
     async def _start_initial(
         self, resource_group_name: str, vm_scale_set_name: str, instance_id: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -14251,6 +14222,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -14259,15 +14231,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -14334,7 +14305,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
     async def _redeploy_initial(
         self, resource_group_name: str, vm_scale_set_name: str, instance_id: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -14359,6 +14330,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -14367,15 +14339,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -14443,7 +14414,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
     async def _perform_maintenance_initial(
         self, resource_group_name: str, vm_scale_set_name: str, instance_id: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -14468,6 +14439,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -14476,15 +14448,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -14550,7 +14521,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         return AsyncLROPoller[None](self._client, raw_result, get_long_running_output, polling_method)  # type: ignore
 
     @distributed_trace_async
-    async def simulate_eviction(  # pylint: disable=inconsistent-return-statements
+    async def simulate_eviction(
         self, resource_group_name: str, vm_scale_set_name: str, instance_id: str, **kwargs: Any
     ) -> None:
         """The operation to simulate the eviction of spot virtual machine in a VM scale set. The eviction
@@ -14566,7 +14537,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         :rtype: None
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -14613,7 +14584,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         parameters: Union[_models.RunCommandInput, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -14650,6 +14621,7 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -14658,15 +14630,14 @@ class VirtualMachineScaleSetVMsOperations:  # pylint: disable=too-many-public-me
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -14835,7 +14806,7 @@ class LogAnalyticsOperations:
     async def _export_request_rate_by_interval_initial(
         self, location: str, parameters: Union[_models.RequestRateByIntervalInput, IO[bytes]], **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -14870,6 +14841,7 @@ class LogAnalyticsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -14878,15 +14850,14 @@ class LogAnalyticsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -15013,7 +14984,7 @@ class LogAnalyticsOperations:
     async def _export_throttled_requests_initial(
         self, location: str, parameters: Union[_models.ThrottledRequestsInput, IO[bytes]], **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -15048,6 +15019,7 @@ class LogAnalyticsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -15056,15 +15028,14 @@ class LogAnalyticsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -15224,7 +15195,7 @@ class VirtualMachineRunCommandsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.RunCommandListResult] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -15297,7 +15268,7 @@ class VirtualMachineRunCommandsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.RunCommandDocument
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -15363,7 +15334,7 @@ class GalleriesOperations:
     async def _create_or_update_initial(
         self, resource_group_name: str, gallery_name: str, gallery: Union[_models.Gallery, IO[bytes]], **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -15399,6 +15370,7 @@ class GalleriesOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -15407,18 +15379,14 @@ class GalleriesOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -15559,7 +15527,7 @@ class GalleriesOperations:
         gallery: Union[_models.GalleryUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -15595,6 +15563,7 @@ class GalleriesOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -15603,11 +15572,14 @@ class GalleriesOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -15755,7 +15727,7 @@ class GalleriesOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.Gallery
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -15798,7 +15770,7 @@ class GalleriesOperations:
         return deserialized  # type: ignore
 
     async def _delete_initial(self, resource_group_name: str, gallery_name: str, **kwargs: Any) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -15822,6 +15794,7 @@ class GalleriesOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -15830,18 +15803,14 @@ class GalleriesOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -15916,7 +15885,7 @@ class GalleriesOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.GalleryList] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -15991,7 +15960,7 @@ class GalleriesOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.GalleryList] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -16080,7 +16049,7 @@ class GalleryImagesOperations:
         gallery_image: Union[_models.GalleryImage, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -16117,6 +16086,7 @@ class GalleryImagesOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -16125,18 +16095,14 @@ class GalleryImagesOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -16295,7 +16261,7 @@ class GalleryImagesOperations:
         gallery_image: Union[_models.GalleryImageUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -16332,6 +16298,7 @@ class GalleryImagesOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -16340,11 +16307,14 @@ class GalleryImagesOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -16510,7 +16480,7 @@ class GalleryImagesOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.GalleryImage
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -16556,7 +16526,7 @@ class GalleryImagesOperations:
     async def _delete_initial(
         self, resource_group_name: str, gallery_name: str, gallery_image_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -16581,6 +16551,7 @@ class GalleryImagesOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -16589,18 +16560,14 @@ class GalleryImagesOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -16687,7 +16654,7 @@ class GalleryImagesOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.GalleryImageList] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -16779,7 +16746,7 @@ class GalleryImageVersionsOperations:
         gallery_image_version: Union[_models.GalleryImageVersion, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -16817,6 +16784,7 @@ class GalleryImageVersionsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -16825,18 +16793,14 @@ class GalleryImageVersionsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -16867,8 +16831,8 @@ class GalleryImageVersionsOperations:
         :type gallery_image_name: str
         :param gallery_image_version_name: The name of the gallery Image Version to be created. Needs
          to follow semantic version name pattern: The allowed characters are digit and period. Digits
-         must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_image_version_name: str
         :param gallery_image_version: Parameters supplied to the create or update gallery Image Version
          operation. Required.
@@ -16907,8 +16871,8 @@ class GalleryImageVersionsOperations:
         :type gallery_image_name: str
         :param gallery_image_version_name: The name of the gallery Image Version to be created. Needs
          to follow semantic version name pattern: The allowed characters are digit and period. Digits
-         must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_image_version_name: str
         :param gallery_image_version: Parameters supplied to the create or update gallery Image Version
          operation. Required.
@@ -16945,8 +16909,8 @@ class GalleryImageVersionsOperations:
         :type gallery_image_name: str
         :param gallery_image_version_name: The name of the gallery Image Version to be created. Needs
          to follow semantic version name pattern: The allowed characters are digit and period. Digits
-         must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_image_version_name: str
         :param gallery_image_version: Parameters supplied to the create or update gallery Image Version
          operation. Is either a GalleryImageVersion type or a IO[bytes] type. Required.
@@ -17016,7 +16980,7 @@ class GalleryImageVersionsOperations:
         gallery_image_version: Union[_models.GalleryImageVersionUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -17054,6 +17018,7 @@ class GalleryImageVersionsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -17062,11 +17027,14 @@ class GalleryImageVersionsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -17097,8 +17065,8 @@ class GalleryImageVersionsOperations:
         :type gallery_image_name: str
         :param gallery_image_version_name: The name of the gallery Image Version to be updated. Needs
          to follow semantic version name pattern: The allowed characters are digit and period. Digits
-         must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_image_version_name: str
         :param gallery_image_version: Parameters supplied to the update gallery Image Version
          operation. Required.
@@ -17137,8 +17105,8 @@ class GalleryImageVersionsOperations:
         :type gallery_image_name: str
         :param gallery_image_version_name: The name of the gallery Image Version to be updated. Needs
          to follow semantic version name pattern: The allowed characters are digit and period. Digits
-         must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_image_version_name: str
         :param gallery_image_version: Parameters supplied to the update gallery Image Version
          operation. Required.
@@ -17175,8 +17143,8 @@ class GalleryImageVersionsOperations:
         :type gallery_image_name: str
         :param gallery_image_version_name: The name of the gallery Image Version to be updated. Needs
          to follow semantic version name pattern: The allowed characters are digit and period. Digits
-         must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_image_version_name: str
         :param gallery_image_version: Parameters supplied to the update gallery Image Version
          operation. Is either a GalleryImageVersionUpdate type or a IO[bytes] type. Required.
@@ -17268,7 +17236,7 @@ class GalleryImageVersionsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.GalleryImageVersion
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -17321,7 +17289,7 @@ class GalleryImageVersionsOperations:
         gallery_image_version_name: str,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -17347,6 +17315,7 @@ class GalleryImageVersionsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -17355,18 +17324,14 @@ class GalleryImageVersionsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -17466,7 +17431,7 @@ class GalleryImageVersionsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.GalleryImageVersionList] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -17558,7 +17523,7 @@ class GalleryApplicationsOperations:
         gallery_application: Union[_models.GalleryApplication, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -17595,6 +17560,7 @@ class GalleryApplicationsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -17603,18 +17569,14 @@ class GalleryApplicationsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -17777,7 +17739,7 @@ class GalleryApplicationsOperations:
         gallery_application: Union[_models.GalleryApplicationUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -17814,6 +17776,7 @@ class GalleryApplicationsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -17822,11 +17785,14 @@ class GalleryApplicationsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -17999,7 +17965,7 @@ class GalleryApplicationsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.GalleryApplication
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -18045,7 +18011,7 @@ class GalleryApplicationsOperations:
     async def _delete_initial(
         self, resource_group_name: str, gallery_name: str, gallery_application_name: str, **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -18070,6 +18036,7 @@ class GalleryApplicationsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -18078,18 +18045,14 @@ class GalleryApplicationsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -18177,7 +18140,7 @@ class GalleryApplicationsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.GalleryApplicationList] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -18269,7 +18232,7 @@ class GalleryApplicationVersionsOperations:
         gallery_application_version: Union[_models.GalleryApplicationVersion, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -18307,6 +18270,7 @@ class GalleryApplicationVersionsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -18315,18 +18279,14 @@ class GalleryApplicationVersionsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 201, 202]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 201:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -18357,8 +18317,8 @@ class GalleryApplicationVersionsOperations:
         :type gallery_application_name: str
         :param gallery_application_version_name: The name of the gallery Application Version to be
          created. Needs to follow semantic version name pattern: The allowed characters are digit and
-         period. Digits must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         period. Digits must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_application_version_name: str
         :param gallery_application_version: Parameters supplied to the create or update gallery
          Application Version operation. Required.
@@ -18398,8 +18358,8 @@ class GalleryApplicationVersionsOperations:
         :type gallery_application_name: str
         :param gallery_application_version_name: The name of the gallery Application Version to be
          created. Needs to follow semantic version name pattern: The allowed characters are digit and
-         period. Digits must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         period. Digits must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_application_version_name: str
         :param gallery_application_version: Parameters supplied to the create or update gallery
          Application Version operation. Required.
@@ -18436,8 +18396,8 @@ class GalleryApplicationVersionsOperations:
         :type gallery_application_name: str
         :param gallery_application_version_name: The name of the gallery Application Version to be
          created. Needs to follow semantic version name pattern: The allowed characters are digit and
-         period. Digits must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         period. Digits must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_application_version_name: str
         :param gallery_application_version: Parameters supplied to the create or update gallery
          Application Version operation. Is either a GalleryApplicationVersion type or a IO[bytes] type.
@@ -18508,7 +18468,7 @@ class GalleryApplicationVersionsOperations:
         gallery_application_version: Union[_models.GalleryApplicationVersionUpdate, IO[bytes]],
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -18546,6 +18506,7 @@ class GalleryApplicationVersionsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -18554,11 +18515,14 @@ class GalleryApplicationVersionsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -18589,8 +18553,8 @@ class GalleryApplicationVersionsOperations:
         :type gallery_application_name: str
         :param gallery_application_version_name: The name of the gallery Application Version to be
          updated. Needs to follow semantic version name pattern: The allowed characters are digit and
-         period. Digits must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         period. Digits must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_application_version_name: str
         :param gallery_application_version: Parameters supplied to the update gallery Application
          Version operation. Required.
@@ -18630,8 +18594,8 @@ class GalleryApplicationVersionsOperations:
         :type gallery_application_name: str
         :param gallery_application_version_name: The name of the gallery Application Version to be
          updated. Needs to follow semantic version name pattern: The allowed characters are digit and
-         period. Digits must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         period. Digits must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_application_version_name: str
         :param gallery_application_version: Parameters supplied to the update gallery Application
          Version operation. Required.
@@ -18668,8 +18632,8 @@ class GalleryApplicationVersionsOperations:
         :type gallery_application_name: str
         :param gallery_application_version_name: The name of the gallery Application Version to be
          updated. Needs to follow semantic version name pattern: The allowed characters are digit and
-         period. Digits must be within the range of a 32-bit integer. Format:
-         :code:`<MajorVersion>`.:code:`<MinorVersion>`.:code:`<Patch>`. Required.
+         period. Digits must be within the range of a 32-bit integer. Format: :code:`<MajorVersion>`.\\
+         :code:`<MinorVersion>`.\\ :code:`<Patch>`. Required.
         :type gallery_application_version_name: str
         :param gallery_application_version: Parameters supplied to the update gallery Application
          Version operation. Is either a GalleryApplicationVersionUpdate type or a IO[bytes] type.
@@ -18762,7 +18726,7 @@ class GalleryApplicationVersionsOperations:
         :rtype: ~azure.mgmt.compute.v2019_12_01.models.GalleryApplicationVersion
         :raises ~azure.core.exceptions.HttpResponseError:
         """
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -18815,7 +18779,7 @@ class GalleryApplicationVersionsOperations:
         gallery_application_version_name: str,
         **kwargs: Any
     ) -> AsyncIterator[bytes]:
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,
@@ -18841,6 +18805,7 @@ class GalleryApplicationVersionsOperations:
         )
         _request.url = self._client.format_url(_request.url)
 
+        _decompress = kwargs.pop("decompress", True)
         _stream = True
         pipeline_response: PipelineResponse = await self._client._pipeline.run(  # pylint: disable=protected-access
             _request, stream=_stream, **kwargs
@@ -18849,18 +18814,14 @@ class GalleryApplicationVersionsOperations:
         response = pipeline_response.http_response
 
         if response.status_code not in [200, 202, 204]:
-            await response.read()  # Load the body in memory and close the socket
+            try:
+                await response.read()  # Load the body in memory and close the socket
+            except (StreamConsumedError, StreamClosedError):
+                pass
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             raise HttpResponseError(response=response, error_format=ARMErrorFormat)
 
-        if response.status_code == 200:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 202:
-            deserialized = response.stream_download(self._client._pipeline)
-
-        if response.status_code == 204:
-            deserialized = response.stream_download(self._client._pipeline)
+        deserialized = response.stream_download(self._client._pipeline, decompress=_decompress)
 
         if cls:
             return cls(pipeline_response, deserialized, {})  # type: ignore
@@ -18961,7 +18922,7 @@ class GalleryApplicationVersionsOperations:
         api_version: str = kwargs.pop("api_version", _params.pop("api-version", self._api_version or "2019-12-01"))
         cls: ClsType[_models.GalleryApplicationVersionList] = kwargs.pop("cls", None)
 
-        error_map: MutableMapping[int, Type[HttpResponseError]] = {
+        error_map: MutableMapping = {
             401: ClientAuthenticationError,
             404: ResourceNotFoundError,
             409: ResourceExistsError,

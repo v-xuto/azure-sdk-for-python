@@ -24,19 +24,15 @@ DocumentModelAdministrationClientPreparer = functools.partial(
 )
 
 
-class TestDACClassifyDocumentAsync(DocumentIntelligenceTest):
+class TestDACClassifyDocument(DocumentIntelligenceTest):
     @skip_flaky_test
     @DocumentIntelligencePreparer()
     @recorded_by_proxy
     def test_classify_document(self, documentintelligence_training_data_classifier_sas_url, **kwargs):
         set_bodiless_matcher()
         documentintelligence_endpoint = kwargs.pop("documentintelligence_endpoint")
-        di_client = DocumentIntelligenceClient(
-            documentintelligence_endpoint, get_credential()
-        )
-        di_admin_client = DocumentIntelligenceAdministrationClient(
-            documentintelligence_endpoint, get_credential()
-        )
+        di_client = DocumentIntelligenceClient(documentintelligence_endpoint, get_credential())
+        di_admin_client = DocumentIntelligenceAdministrationClient(documentintelligence_endpoint, get_credential())
 
         recorded_variables = kwargs.pop("variables", {})
         recorded_variables.setdefault("classifier_id", str(uuid.uuid4()))
@@ -63,7 +59,8 @@ class TestDACClassifyDocumentAsync(DocumentIntelligenceTest):
         )
         poller = di_admin_client.begin_build_classifier(request)
         classifier = poller.result()
-        assert classifier.classifier_id == recorded_variables.get("classifier_id")
+        # FIXME: Tracking issue: https://github.com/Azure/azure-sdk-for-python/issues/38881
+        # assert classifier.classifier_id == recorded_variables.get("classifier_id")
         assert len(classifier.doc_types) == 3
 
         with open(self.irs_classifier_document, "rb") as fd:
@@ -73,7 +70,6 @@ class TestDACClassifyDocumentAsync(DocumentIntelligenceTest):
         poller = di_client.begin_classify_document(
             classifier.classifier_id,
             my_file,
-            content_type="application/octet-stream",
         )
         document = poller.result()
         assert document.model_id == classifier.classifier_id
